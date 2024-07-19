@@ -145,6 +145,7 @@
 // }
 
 import 'package:flutter/material.dart';
+import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
 import 'add_notes_screen.dart';
 import 'db_helper.dart'; // Import DBHelper
 import 'note_model.dart'; // Import NoteModel
@@ -204,17 +205,17 @@ class _NotesScreenState extends State<NotesScreen> {
         padding: const EdgeInsets.all(8.0),
         child: Column(
           children: [
-            const SizedBox(height: 10,),
             Card(
-              child: TextField(
-                controller: _searchController,
-                decoration: const InputDecoration(
-                  hintText: 'Search notes...',
-                  hintStyle: TextStyle(fontSize: 16, color: Colors.grey, fontWeight: FontWeight.w400),
-                  border: InputBorder.none,
-                  fillColor: Colors.white,
-                  filled: true,
-                  prefixIcon: Icon(Icons.search),
+              child: Padding(
+                padding: const EdgeInsets.only(left: 20.0),
+                child: TextField(
+                  controller: _searchController,
+                  decoration: const InputDecoration(
+                    hintText: 'Search notes...',
+                    hintStyle: TextStyle(fontSize: 16, color: Colors.grey, fontWeight: FontWeight.w400),
+                    border: InputBorder.none,
+                    suffixIcon: Icon(Icons.search),
+                  ),
                 ),
               ),
             ),
@@ -239,62 +240,75 @@ class _NotesScreenState extends State<NotesScreen> {
                     return note.title.toLowerCase().contains(query);
                   }).toList();
 
-                  return GridView.builder(
-                    gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                      crossAxisCount: 2,
-                      childAspectRatio: 1.5 / 1,
+                  return GridView.custom(
+                    gridDelegate: SliverStairedGridDelegate(
+                      startCrossAxisDirectionReversed: true,
+                      crossAxisSpacing: 1,mainAxisSpacing: 10,
+                      pattern: [
+                        const StairedGridTile(0.5, 1.4),
+                        const StairedGridTile(0.5, 3 / 2.2),
+                        const StairedGridTile(1.0, 10 / 3.5),
+                      ],
                     ),
-                    itemCount: _filteredNotes.length,
-                    itemBuilder: (context, index) {
-                      final note = _filteredNotes[index];
-                      return Card(
-                        child: Stack(
-                          children: [
-                            InkWell(
-                              onTap: () {
-                                Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (context) => UpdateNoteScreen(note: note),
-                                  ),
-                                ).then((_) {
-                                  setState(() {
-                                    _notesFuture = DBHelper.getNotes();
-                                  });
-                                });
-                              },
-                              child: Padding(
-                                padding: const EdgeInsets.all(10.0),
-                                child: Column(
-                                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(note.title, style: const TextStyle(fontWeight: FontWeight.w500)),
-                                    Text(note.subtitle),
-                                    const SizedBox(height: 5),
-                                    Align(
-                                      alignment: Alignment.bottomRight,
-                                      child: Text(note.date, style: const TextStyle(color: Colors.grey)),
+                    childrenDelegate: SliverChildBuilderDelegate(
+                          (context, index) {
+                            final note = _filteredNotes[index];
+                            return Card(
+                              child: Stack(
+                                children: [
+                                  InkWell(
+                                    onTap: () {
+
+                                      // Navigate to UpdateNoteScreen
+                                      Navigator.push(
+                                        context,
+                                        MaterialPageRoute(builder: (context) => UpdateNoteScreen(note: note,),
+                                        ),
+                                      ).then((_) {
+                                        setState(() {
+                                          _notesFuture = DBHelper.getNotes();
+                                        });
+                                      });
+                                    },
+                                    child: Padding(
+                                      padding: const EdgeInsets.all(10.0),
+                                      child: Column(
+                                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                        children: [
+                                          const SizedBox(height: 5,),
+                                          Text(note.title, style: const TextStyle(fontWeight: FontWeight.w500,overflow: TextOverflow.ellipsis,)),
+
+                                          const SizedBox(height: 5,),
+                                          Expanded(child: Text(note.subtitle,overflow: TextOverflow.ellipsis,maxLines: 2,)),
+
+                                          Align(
+                                            alignment: Alignment.bottomRight,
+                                            child: Text(note.date, style: const TextStyle(color: Colors.grey)),
+                                          ),
+                                        ],
+                                      ),
                                     ),
-                                  ],
-                                ),
+                                  ),
+
+
+                                  // Delete button
+                                  Positioned(
+                                    right: 0,
+                                    top: 0,
+                                    child: IconButton(
+                                      icon: const Icon(Icons.delete, color: Colors.grey,),
+                                      onPressed: () {
+                                        _deleteNote(note.id!); // Delete the note
+                                      },
+                                    ),
+                                  ),
+                                ],
                               ),
-                            ),
-                            // Delete button
-                            Positioned(
-                              right: 0,
-                              top: 0,
-                              child: IconButton(
-                                icon: const Icon(Icons.delete),
-                                onPressed: () {
-                                  _deleteNote(note.id!); // Delete the note
-                                },
-                              ),
-                            ),
-                          ],
-                        ),
-                      );
-                    },
+                            );
+                      },
+                      childCount: _filteredNotes.length,
+                    ),
                   );
                 },
               ),
@@ -302,6 +316,9 @@ class _NotesScreenState extends State<NotesScreen> {
           ],
         ),
       ),
+
+
+      // FloatingActionButton
       floatingActionButton: FloatingActionButton(
         onPressed: () {
           Navigator.push(
@@ -324,10 +341,10 @@ class _NotesScreenState extends State<NotesScreen> {
 class UpdateNoteScreen extends StatelessWidget {
   final NoteModel note;
 
-  const UpdateNoteScreen({required this.note, super.key});
+  const UpdateNoteScreen({required this.note, super.key,});
 
   @override
   Widget build(BuildContext context) {
-    return AddNotesScreen(note: note);
+    return AddNotesScreen(note: note,);
   }
 }
